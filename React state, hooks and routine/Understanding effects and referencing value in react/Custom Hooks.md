@@ -1,0 +1,150 @@
+# How Can You Create Custom Hooks in React?
+
+React provides many built-in Hooks that let you implement different features in your projects. These include `useState`, `useEffect`, `useContext`, and others.
+
+But sometimes, you'll need to add a feature that none of the built-in Hooks can help with. Fortunately, you can create your own custom Hooks in React.
+
+## Benefits of Custom Hooks
+
+Custom Hooks are not as complicated as they might seem. They're just reusable functions that let you share logic across multiple components. That means reusability is another reason why you would want to build your own Hook.
+
+With a custom Hook, you can extract logic away from any components that use them, like data fetching, state management, toggling, side effects like checking for the online or offline status of users, and so on.
+
+You can then import the Hook to use in any component, so you can focus on rendering and presentation within those components. That means fewer repetitions and less duplication, which means fewer places to make changes when you want to make any updates.
+
+Now, let's take a look at how you can make your own custom Hook.
+
+## Naming Custom Hooks
+
+In React, all built-in Hooks start with the word `use`, so your custom Hook should follow the same convention. Your custom Hook's name should also clearly communicate what it does.
+
+Examples:
+
+- If your custom Hook fetches data, you can call it `useFetch`.
+- If it toggles something on and off, you can call it `useToggle`.
+- If it implements debouncing, `useDebounce` is a good name.
+
+## Creating a Debounce Hook
+
+Let's say you want to build a custom Hook to add debouncing to your app.
+
+**Debouncing** is a programming technique that limits how often a function runs. It works by waiting until a user stops performing an action for a specified period of time before executing the function.
+
+For example, in a search box, instead of making an API call for every keystroke, debouncing waits until the user pauses typing for, say, 500 milliseconds.
+
+To create a debouncing custom Hook, you first need to create a `useDebounce.jsx` or `useDebounce.js` file. Conventionally, files for any custom Hooks you create are saved to a `hooks` folder.
+
+You can use some built-in Hooks within your own custom Hook. For debouncing, you need the `useState` and `useEffect` Hooks, so import them at the top of your file:
+
+```jsx
+import { useState, useEffect } from "react";
+```
+
+Next, create a `useDebounce` function that takes `value` and `delay` as parameters.
+
+- `value` is the value you want to delay.
+- `delay` is the period of time you want to wait.
+
+Since you want to wait for a specific period of time, the `setTimeout` and `clearTimeout` functions would be useful:
+
+```jsx
+import { useState, useEffect } from "react";
+
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+export { useDebounce };
+```
+
+The `debouncedValue` state holds and returns the delayed value, which only updates after the specified timeout period.
+
+`useEffect` is where the magic really happens. Anything that exists outside the React rendering cycle, like setting and clearing a timer, is a side effect, and you should use the `useEffect` Hook to handle it.
+
+Within the `useEffect` Hook here, you use `setTimeout` to update `debouncedValue`. You then return a cleanup function that uses `clearTimeout` to clear the previous timeout whenever `value` or `delay` changes, or the component unmounts.
+
+## Example: Using the Debounce Hook
+
+To use this Hook, we've prepared a `footballers` array to filter through with a simple search bar:
+
+```jsx
+const footballers = [
+  "Lionel Messi", "Cristiano Ronaldo", "Neymar Jr",
+  "Kylian Mbappe", "Mohamed Salah", "Sadio Mane",
+  "Kevin De Bruyne", "Robert Lewandowski", "Harry Kane",
+  "Sergio Ramos", "Virgil van Dijk", "Alisson Becker",
+  "Joshua Kimmich", "Manuel Neuer", "Karim Benzema",
+  "Thibaut Courtois", "Eden Hazard", "Raheem Sterling",
+  "Bruno Fernandes", "Trent Alexander-Arnold", "Son Heung-min",
+  "Pierre-Emerick Aubameyang", "Sergio Aguero", "Luis Suarez",
+  "Luka Modric", "Casemiro", "Frenkie de Jong", "Gerard Pique",
+  "Marc-Andre ter Stegen", "Keylor Navas", "Angel Di Maria",
+  "N'Golo Kante", "Kai Havertz", "Timo Werner", "Hakim Ziyech",
+  "Christian Pulisic", "Mason Mount", "Olivier Giroud", "Tammy Abraham",
+  "Kepa Arrizabalaga", "Ben Chilwell", "Thiago Silva", "Kurt Zouma",
+  "John Terry", "Didier Drogba", "Frank Lampard", "Ashley Cole", "Petr Cech",
+];
+
+export default footballers;
+```
+
+Here's a `FootballerSearch` component that uses the `useDebounce` Hook to delay searching for one second after the user stops typing:
+
+```jsx
+import { useState, useEffect } from "react";
+import { useDebounce } from "./hooks/useDebounce";
+import footballers from "./footballers";
+
+const FootballerSearch = () => {
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 1000);
+
+  useEffect(() => {
+    if (debouncedQuery) {
+      const results = footballers.filter((footballer) =>
+        footballer.toLowerCase().includes(debouncedQuery.toLowerCase()),
+      );
+
+      console.log("Search results:", results);
+    } else {
+      console.log("Search results: []");
+    }
+  }, [debouncedQuery]);
+
+  return (
+    <>
+      <h1 style={{ textAlign: "center" }}>
+        Footballer Search App
+      </h1>
+
+      <div style={{ textAlign: "center" }}>
+        <input
+          style={{ padding: "0.5rem", width: "30%" }}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search for a footballer..."
+        />
+      </div>
+    </>
+  );
+};
+
+export default FootballerSearch;
+```
+
+As you can see, the `debouncedQuery` variable is what initializes the `useDebounce` Hook with the `query` state (what the user types) and a delay of 1,000 milliseconds, or one second.
+
+The search itself is handled inside the `useEffect` Hook, and the search results are logged to the console.
